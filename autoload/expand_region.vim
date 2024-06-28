@@ -234,6 +234,19 @@ function! s:get_candidate_list()
   return extend(candidates, recursive_candidates)
 endfunction
 
+function! s:limit_singleline(candidates)
+  let cur_line = getpos('.')[1]
+  let i = len(a:candidates)
+  while i > 0
+    let i -= 1
+    let candidate = a:candidates[i]
+    if candidate['start_pos'][1] != cur_line
+          \ || candidate['end_pos'][1] != cur_line
+      call remove(a:candidates, i)
+    endif
+  endwhile
+endfunction
+
 " Return a dictionary containing the start position, end position and length of
 " the current visual selection.
 function! s:get_visual_selection()
@@ -279,6 +292,9 @@ function! s:compute_candidates(cursor_pos)
 
   " Compute a list of candidate regions
   let s:candidates = s:get_candidate_list()
+  if get(g:, 'expand_region_singleline', 0)
+    call s:limit_singleline(s:candidates)
+  endif
 
   " Sort them and remove the ones with 0 or 1 length
   call filter(sort(s:candidates, "s:sort_text_object"), 'v:val.length > 1')
